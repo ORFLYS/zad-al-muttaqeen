@@ -12,6 +12,9 @@
   <a href="https://play.google.com/store/apps/details?id=com.huda.bag.hqepa">
     <img src="https://img.shields.io/badge/Google_Play-متوفر_الآن-34A853?logo=google-play&logoColor=white" alt="Google Play" />
   </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT" />
+  </a>
   <img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter" alt="Flutter" />
   <img src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android" alt="Android" />
   <img src="https://img.shields.io/badge/Version-1.0.8-gold" alt="Version" />
@@ -92,6 +95,15 @@ flutter run
 ```bash
 flutter build appbundle --release
 ```
+
+---
+
+## 📜 الحقوق والترخيص (License & Copyright)
+
+هذا المشروع مفتوح المصدر ومحمي بموجب **رخصة MIT (MIT License)**.
+- **حقوق الملكية الفكرية:** محفوظة لـ **ORFLYS** © 2026 (`admin@orflys.com`).
+- يُسمح بالاطلاع على الكود، استخدامه، والمساهمة فيه بحرية، مع اشتراط الإبقاء على إشعار حقوق الملكية الأصلي ونسب العمل لصاحبه في كافة النسخ والمشاريع المشتقة.
+- للاطلاع على الشروط القانونية الكاملة، يُرجى مراجعة ملف [LICENSE](LICENSE).
 
 ---
 
