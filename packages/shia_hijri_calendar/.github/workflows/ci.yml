@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Install dependencies
+        run: dart pub get
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze
+        run: dart analyze --fatal-infos
+      - name: Run tests with coverage
+        run: dart test -x live --coverage=coverage
+      - name: Convert coverage to lcov
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:format_coverage \
+            --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+      - name: Publish coverage badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          pct=$(awk -F: '/^LF:/{f+=$2} /^LH:/{h+=$2} END{if(f>0) printf "%.0f", h/f*100; else print 0}' coverage/lcov.info)
+          if [ "$pct" -ge 80 ]; then color=brightgreen; elif [ "$pct" -ge 60 ]; then color=yellow; else color=orange; fi
+          json="{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${pct}%\",\"color\":\"${color}\"}"
+          echo "Coverage: ${pct}%"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan badges
+          git rm -rf --cached . >/dev/null 2>&1 || true
+          echo "$json" > coverage.json
+          git add -f coverage.json
+          git commit -m "Update coverage badge: ${pct}% [skip ci]"
+          git push -f origin badges

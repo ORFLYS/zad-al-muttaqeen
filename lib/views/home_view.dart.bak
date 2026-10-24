@@ -1,0 +1,2143 @@
+// views/home_view.dart
+
+import 'dart:async';
+import 'dart:ui'; // مطلوب لتأثير الزجاج المصقول BackdropFilter
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:hijri/hijri_calendar.dart';
+import '../../models/shia_data.dart';
+import '../../providers/app_provider.dart';
+import '../../services/location_service.dart';
+import 'ziyarats_view.dart';
+import 'duas_view.dart';
+import 'reader_screen.dart';
+import 'qibla_view.dart';
+import 'wallpapers_view.dart';
+
+class HomeView extends StatefulWidget {
+  const HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  Timer? _timer;
+  int _activeSliderIndex = 0;
+  int _sliderTick = 0;
+
+  final List<Map<String, String>> _sliderItems = [
+    {
+      "title": "زيارة عاشوراء",
+      "desc": "من أقوى الزيارات الشريفة وأعظمها ثواباً",
+      "text": """بِسْمِ اللهِ الرَّحْمنِ الرَّحِيمِ
+السَّلامُ عَلَيْكَ يَا أَبَا عَبْدِ اللهِ، السَّلامُ عَلَيْكَ يَا ابْنَ رَسُولِ اللهِ، السَّلامُ عَلَيْكَ يَا ابْنَ أَمِيرِ المُؤْمِنِينَ وَابْنَ سَيِّدِ الوَصِيِّينَ، السَّلامُ عَلَيْكَ يَا ابْنَ فَاطِمَةَ سَيِّدَةِ نِسَاءِ العَالَمِينَ.
+
+السَّلامُ عَلَيْكَ يَا ثَارَ اللهِ وَابْنَ ثَارِهِ وَالوِتْرَ المَوْتُورَ. السَّلامُ عَلَيْكَ وَعَلَى الأَرْوَاحِ الَّتِي حَلَّتْ بِفِنَائِكَ عَلَيْكُمْ مِنِّي جَمِيعاً سَلامُ اللهِ أَبَداً مَا بَقِيتُ وَبَقِيَ اللَّيْلُ وَالنَّهَارُ.
+
+يَا أَبَا عَبْدِ اللهِ، لَقَدْ عَظُمَتِ الرَّزِيَّةُ وَجَلَّتْ وَعَظُمَتِ المُصِيبَةُ بِكَ عَلَيْنَا وَعَلَى جَمِيعِ أَهْلِ الإِسْلامِ، وَجَلَّتْ وَعَظُمَتْ مُصِيبَتُكَ فِي السَّمَاوَاتِ عَلَى جَمِيعِ أَهْلِ السَّمَاوَاتِ، فَلَعَنَ اللهُ أُمَّةً أَسَّسَتْ أَسَاسَ الظُّلْمِ وَالجَوْرِ عَلَيْكُمْ أَهْلَ البَيْتِ، وَلَعَنَ اللهُ أُمَّةً دَفَعَتْكُمْ عَنْ مَقَامِكُمْ وَأَزَالَتْكُمْ عَنْ مَرَاتِبِكُمُ الَّتِي رَتَّبَكُمُ اللهُ فِيهَا، وَلَعَنَ اللهُ أُمَّةً قَتَلَتْكُمْ، وَلَعَنَ اللهُ المُمَهِّدِينَ لَهُمْ بِالتَّمْكِينِ مِنْ قِتَالِكُمْ، بَرِئْتُ إِلى اللهِ وَإِلَيْكُمْ مِنْهُمْ وَمِنْ أَشْيَاعِهِمْ وَأَتْبَاعِهِمْ وَأَوْلِيَائِهِمْ.
+
+يَا أَبَا عَبْدِ اللهِ، إِنِّي سِلْمٌ لِمَنْ سَالَمَكُمْ، وَحَرْبٌ لِمَنْ حَارَبَكُمْ إِلى يَوْمِ القِيَامةِ..."""
+    },
+    {
+      "title": "زيارة آل ياسين",
+      "desc": "زيارة مباركة مروية عن الإمام الحجة (عج)",
+      "text": """بِسْمِ اللهِ الرَّحْمنِ الرَّحِيمِ
+سَلامٌ عَلى آلِ ياسينَ، السَّلامُ عَلَيْكَ يا داعِيَ اللهِ وَرَبّانِيَّ آياتِهِ، السَّلامُ عَلَيْكَ يا بابَ اللهِ وَدَيّانَ دينِهِ، السَّلامُ عَلَيْكَ يا خَليفَةَ اللهِ وَناصِرَ حَقِّهِ، السَّلامُ عَلَيْكَ يا حُجَّةَ اللهِ وَدَليلَ إرادَتِهِ، السَّلامُ عَلَيْكَ يا تالِيَ كِتابِ اللهِ وَتَرْجُمانَهُ.
+
+السَّلامُ عَلَيْكَ في آناءِ لَيْلِكَ وَأطْرافِ نَهارِكَ، السَّلامُ عَلَيْكَ يا بَقِيَّةَ اللهِ في أرْضِهِ. أشْهَدُ أنَّكَ الحُجَّةُ على خَلْقِهِ، وَأنَّ قَوْلَكَ حَقٌّ، وَأنَّ فِعْلَكَ صِدْقٌ، وَأنَّ أَمْرَكَ رَشَدٌ، وَأنَّ خِطابَكَ عَدْلٌ، وَأنَّ تَقْديرَكَ قَصْدٌ..."""
+    },
+    {
+      "title": "دعاء كميل",
+      "desc": "دعاء رفيع الشأن لغفران الذنوب وتيسير الرزق",
+      "text": """بِسْمِ اللهِ الرَّحْمنِ الرَّحِيمِ
+اللَّهُمَّ إِنِّي أَسْأَلُكَ بِرَحْمَتِكَ الَّتِي وَسِعَتْ كُلَّ شَيْءٍ، وَبِقُوَّتِكَ Lَّتِي قَهَرْتَ بِهَا كُلَّ شَيْءٍ، وَخَضَعَ لَهَا كُلُّ شَيْءٍ، وَذَلَّ لَهَا كُلُّ شَيْءٍ، وَبِجَبَرُوتِكَ الَّتِي غَلَبْتَ بِهَا كُلَّ شَيْءٍ، وَبِعِزَّتِكَ الَّتِي لا يَقُومُ لَهَا شَيْءٌ، وَبِعَظَمَتِكَ الَّتِي مَلأَتْ كُلَّ شَيْءٍ، وَبِسُلْطَانِكَ الَّذِي عَلا كُلَّ شَيْءٍ.
+
+وَبِوَجْهِكَ البَاقِي بَعْدَ فَنَاءِ كُلِّ شَيْءٍ، وَبِأَسْمَائِكَ الَّتِي مَلأَتْ أَرْكَانَ كُلِّ شَيْءٍ، وَبِعِلْمِكَ الَّذِي أَحَاطَ بِكُلِّ شَيْءٍ، وَبِنُورِ وَجْهِكَ الَّذِي أَضَاءَ لَهُ كُلُّ شَيْءٍ.
+
+يَا نُورُ يَا قُدُّوسُ، يَا أَوَّلَ الأوَّلِينَ وَيَا آخِرَ الآخِرِينَ. اللَّهُمَّ اغْفِرْ لِيَ الذُّنُوبَ الَّتِي تَهْتِكُ العِصَمَ، اللَّهُمَّ اغْفِرْ لِيَ الذُّنُوبَ الَّتِي تُنْزِلُ النِّقَمَ، اللَّهُمَّ اغْفِرْ لِيَ الذُّنُوبَ الَّتِي تُغَيِّرُ النِّعَمَ، اللَّهُمَّ اغْفِرْ لِيَ الذُّنُوبَ الَّتِي تَحْبِسُ الدُّعَاءَ..."""
+    }
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _sliderTick++;
+      if (_sliderTick >= 5) {
+        _sliderTick = 0;
+        _slideNext();
+      }
+    });
+  }
+
+  void _slideNext() {
+    if (!mounted) return;
+    setState(() {
+      _activeSliderIndex = (_activeSliderIndex + 1) % _sliderItems.length;
+    });
+  }
+
+  /// تحديد الصلاة الشرعية النشطة زمنياً بدقة تامة لإبرازها باللون الذهبي
+  String _getActivePrayerName() {
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    final times = provider.prayerTimes;
+    if (times == null) return "";
+
+    final now = DateTime.now();
+
+    final sobh = DateTime(now.year, now.month, now.day, times.fajr.hour, times.fajr.minute);
+    final sunrise = DateTime(now.year, now.month, now.day, times.sunrise.hour, times.sunrise.minute);
+    final dhuhr = DateTime(now.year, now.month, now.day, times.dhuhr.hour, times.dhuhr.minute);
+    final sunset = DateTime(now.year, now.month, now.day, times.sunset.hour, times.sunset.minute);
+    final maghrib = DateTime(now.year, now.month, now.day, times.maghrib.hour, times.maghrib.minute);
+    final midnight = DateTime(now.year, now.month, now.day, times.midnight.hour, times.midnight.minute);
+
+    if (now.isAfter(sobh) && now.isBefore(sunrise)) {
+      return "صلاة الصبح";
+    } else if (now.isAfter(sunrise) && now.isBefore(dhuhr)) {
+      return "الشروق";
+    } else if (now.isAfter(dhuhr) && now.isBefore(sunset)) {
+      return "صلاة الظهر";
+    } else if (now.isAfter(sunset) && now.isBefore(maghrib)) {
+      return "الغروب";
+    } else if (now.isAfter(maghrib) && now.isBefore(midnight)) {
+      return "صلاة المغرب";
+    } else {
+      return "منتصف الليل";
+    }
+  }
+
+  /// بناء حاوية الزجاج المصقول الفائقة النعومة والرقة (Ultra-Thin Frosted Glass)
+  Widget _buildThinGlassCard({
+    required Widget child,
+    required EdgeInsets margin,
+    required EdgeInsets padding,
+    double borderRadius = 20,
+    double opacity = 0.85,
+  }) {
+    return Container(
+      margin: margin,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: opacity),
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.18),
+                width: 1.0,
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<AppProvider>(context);
+    final times = provider.prayerTimes;
+
+    final hijriDate = HijriCalendar.fromDate(DateTime.now().add(Duration(days: provider.hijriOffset)));
+    final activePrayer = _getActivePrayerName();
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // حساب عرض كل كارت من الكروت الثمانية ليناسب الشاشة بالمليمتر
+    final cardWidth = (screenWidth - 32 - 36) / 4;
+
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(provider.activeWallpaper), // الصورة النشطة ديناميكياً لتملأ الشاشة بالكامل
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+          ),
+        ),
+        child: Container(
+          // غشاء حماية وتظليل خفيف جداً يدمج السماء بطريقة ناعمة
+          color: Colors.black.withValues(alpha: 0.08),
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+
+                        // 1. شريط الموقع العلوي (الموقع يمين + تغيير يسار)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // الموقع الحالي (يمين)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.location_on, color: Color(0xFFE5C158), size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      provider.selectedCity.name,
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        shadows: [
+                                          Shadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 4),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // زر تغيير المدينة (يسار)
+                                GestureDetector(
+                                  onTap: () => _showCityPickerDialog(context, provider),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.edit_location_alt_outlined, size: 16, color: Colors.white),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "تغيير",
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          shadows: [
+                                            Shadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 4),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 2. التحية والذكر الماروني الفخم عائم مباشرة على السماء (Floating Texts on Sky)
+                        Align(
+                          alignment: Alignment.center,
+                          child: Column(
+                            children: [
+                              Text(
+                                "السلام عليك",
+                                style: GoogleFonts.cairo(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF475569), // رمادي ناعم
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "يا أبا عبدالله الحسين",
+                                style: GoogleFonts.amiri(
+                                  fontSize: 27,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF8A1525), // ماروني شريف وعريض
+                                  height: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              
+                              // التقويم الهجري (يمين) والميلادي (يسار) بصف واحد
+                              Builder(
+                                builder: (context) {
+                                  final now = DateTime.now();
+                                  const arabicDays = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+                                  const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                                  const hijriMonths = ['محرّم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان', 'رمضان', 'شوّال', 'ذو القعدة', 'ذو الحجّة'];
+                                  final dayName = arabicDays[now.weekday - 1];
+                                  final gMonthName = arabicMonths[now.month - 1];
+                                  final hMonthName = hijriMonths[hijriDate.hMonth - 1];
+                                  
+                                  final dateStyle = GoogleFonts.cairo(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 4),
+                                    ],
+                                  );
+                                  
+                                  return Directionality(
+                                    textDirection: TextDirection.rtl,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // التاريخ الهجري (يمين)
+                                        Text(
+                                          "${hijriDate.hDay} $hMonthName ${hijriDate.hYear} هـ",
+                                          style: dateStyle,
+                                        ),
+                                        // فاصل ذهبي
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                          child: Text(
+                                            "•",
+                                            style: GoogleFonts.cairo(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w900,
+                                              color: const Color(0xFFE5C158),
+                                              shadows: [
+                                                Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 3),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        // التاريخ الميلادي (يسار)
+                                        Text(
+                                          "$dayName ${now.day} $gMonthName ${now.year} م",
+                                          style: dateStyle,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // 3. كارت مواقيت الصلاة العائم الأفقي الكامل (Full-Width Horizontal Prayer Times Card)
+                        if (times != null)
+                          _buildThinGlassCard(
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                            borderRadius: 20,
+                            opacity: 0.35, // زجاجي شفاف جميل ومطابق تماماً للصورة
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // الصف الأفقي للأوقات الستة بالتساوي من اليمين لليسار (RTL)
+                                Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildMinimalPrayerItem("صلاة الصبح", times.fajr, activePrayer, Icons.wb_twilight_outlined),
+                                      _buildMinimalPrayerItem("الشروق", times.sunrise, activePrayer, Icons.wb_sunny_outlined),
+                                      _buildMinimalPrayerItem("صلاة الظهر", times.dhuhr, activePrayer, Icons.sunny),
+                                      _buildMinimalPrayerItem("الغروب", times.sunset, activePrayer, Icons.wb_twilight_outlined),
+                                      _buildMinimalPrayerItem("صلاة المغرب", times.maghrib, activePrayer, Icons.wb_twilight),
+                                      _buildMinimalPrayerItem("منتصف الليل", times.midnight, activePrayer, Icons.nightlight_outlined),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+
+                        // 4. شبكة الأقسام الثمانية الموحدة الفاخرة (8 كروت منفصلة تماماً ومتباعدة كما في صورتك المرجعية)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: [
+                              // الصف الأول (القرآن، الأدعية، الزيارات، الأذكار)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _buildIndividualGridCard(
+                                    icon: Icons.menu_book_outlined,
+                                    title: "القرآن",
+                                    onTap: () => provider.setActiveTab(1),
+                                    cardWidth: cardWidth,
+                                  ),
+                                  _buildIndividualGridCard(
+                                    icon: Icons.volunteer_activism_outlined,
+                                    title: "الأدعية",
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => const DuasView(),
+                                        ),
+                                      );
+                                    },
+                                    cardWidth: cardWidth,
+                                  ),
+                                  _buildIndividualGridCard(
+                                    icon: Icons.mosque_outlined,
+                                    title: "الزيارات",
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => const ZiyaratsView(),
+                                        ),
+                                      );
+                                    },
+                                    cardWidth: cardWidth,
+                                  ),
+                                  _buildIndividualGridCard(
+                                    icon: Icons.auto_awesome_outlined,
+                                    title: "الأذكار",
+                                    onTap: () => _showAzkarBottomSheet(context),
+                                    cardWidth: cardWidth,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              
+                              // الصف الثاني (المسبحة، الأعمال، التبليغات، الخدمات)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _buildIndividualGridCard(
+                                    icon: Icons.wallpaper_outlined,
+                                    title: "الخلفيات",
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) => const WallpapersView()),
+                                      );
+                                    },
+                                    cardWidth: cardWidth,
+                                  ),
+                                  _buildIndividualGridCard(
+                                    icon: Icons.assignment_outlined,
+                                    title: "الأعمال",
+                                    onTap: () {
+                                      final todayEvents = ShiaData.events.where((e) => e.day == hijriDate.hDay && e.month == hijriDate.hMonth).toList();
+                                      if (todayEvents.isNotEmpty) {
+                                        _showEventsBottomSheet(context, todayEvents, showAll: false);
+                                      } else {
+                                        _showEventsBottomSheet(context, ShiaData.events, showAll: true);
+                                      }
+                                    },
+                                    cardWidth: cardWidth,
+                                  ),
+                                  _buildIndividualGridCard(
+                                    icon: Icons.calendar_month_outlined, // التقويم الهجري المحدث بصرياً
+                                    title: "التقويم الهجري",
+                                    onTap: () {
+                                      _showHijriCalendarBottomSheet(context, provider);
+                                    },
+                                    cardWidth: cardWidth,
+                                  ),
+                                  _buildIndividualGridCard(
+                                    icon: Icons.grid_view_outlined, // الخدمات
+                                    title: "الخدمات",
+                                    onTap: () => _showServicesBottomSheet(context),
+                                    cardWidth: cardWidth,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 5. البانر الإعلاني الدائري الفاخر لزيارة عاشوراء (مستقر بالأسفل تماماً فوق شريط القائمة السفلي)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ReaderScreen(
+                          title: _sliderItems[_activeSliderIndex]["title"]!,
+                          text: _sliderItems[_activeSliderIndex]["text"]!,
+                          benefits: _sliderItems[_activeSliderIndex]["desc"]!,
+                        ),
+                      ),
+                    );
+                  },
+                  child: _buildThinGlassCard(
+                    margin: const EdgeInsets.only(left: 16, right: 16, bottom: 84, top: 8), // bottom margin 84 to float perfectly above the 72px nav bar!
+                    padding: const EdgeInsets.all(14),
+                    borderRadius: 20,
+                    opacity: 0.35, // زجاج شفاف فخم يتناسب مع الكروت الباقية
+                    child: Row(
+                      children: [
+                        // زر السهم اليساري الشفاف الفاخر للتنقل اليدوي
+                        GestureDetector(
+                          onTap: () {
+                            _sliderTick = 0;
+                            _slideNext();
+                          },
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.1),
+                            ),
+                            child: const Icon(Icons.arrow_back_ios_new, size: 12, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+
+                        // تفاصيل الزيارة والوصف والـ Dots
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _sliderItems[_activeSliderIndex]["title"]!,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _sliderItems[_activeSliderIndex]["desc"]!,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // مؤشرات الصفحات الـ 3 الصغيرة
+                              Row(
+                                children: [
+                                  _buildSlideDot(_activeSliderIndex == 0),
+                                  const SizedBox(width: 4),
+                                  _buildSlideDot(_activeSliderIndex == 1),
+                                  const SizedBox(width: 4),
+                                  _buildSlideDot(_activeSliderIndex == 2),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // الصورة الدائرية الشريفة المقصوصة (Circular Masked Dome Asset)
+                        Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFC5A880), width: 1.0),
+                            image: const DecorationImage(
+                              image: AssetImage("assets/background.jpg"),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// بناء كارت منفرد مخصص للشبكة الثمانية الموحدة (Frosted Glass Individual Grid Item)
+  Widget _buildIndividualGridCard({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    required double cardWidth,
+  }) {
+    return _buildThinGlassCard(
+      margin: EdgeInsets.zero,
+      padding: EdgeInsets.zero,
+      borderRadius: 16,
+      opacity: 0.32, // زجاج شفاف ممتاز ومطابق تماماً للصورة المرجعية
+      child: SizedBox(
+        width: cardWidth,
+        height: 76,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  title,
+                  style: GoogleFonts.cairo(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// بناء عنصر وقت الصلاة الرفيع الصغير في الكارت الأفقي
+  Widget _buildMinimalPrayerItem(String name, DateTime time, String activePrayer, IconData icon) {
+    final format = intl.DateFormat('hh:mm').format(time);
+    bool isActive = (name == activePrayer);
+
+    return Column(
+      children: [
+        Text(
+          name,
+          style: GoogleFonts.cairo(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: isActive ? const Color(0xFFE5C158) : Colors.white70,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Icon(
+          icon,
+          size: 13,
+          color: isActive ? const Color(0xFFE5C158) : Colors.white70,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          format,
+          style: GoogleFonts.orbitron(
+            fontSize: 9.5,
+            fontWeight: FontWeight.w800,
+            color: isActive ? const Color(0xFFE5C158) : Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showCityPickerDialog(BuildContext context, AppProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return _ShiaLocationBottomSheet(provider: provider);
+      },
+    );
+  }
+
+
+  Widget _buildSlideDot(bool active) {
+    return Container(
+      width: active ? 12 : 5,
+      height: 5,
+      decoration: BoxDecoration(
+        color: active ? const Color(0xFFE5C158) : Colors.white30,
+        borderRadius: BorderRadius.circular(2.5),
+      ),
+    );
+  }
+
+  /// منبثق سفلي يعرض أوراد الأذكار الجعفرية اليومية وتعقيبات الصلاة
+  void _showAzkarBottomSheet(BuildContext context) {
+    // قائمة أذكار أيام الأسبوع الجعفرية
+    final List<Map<String, String>> weekAzkar = [
+      {"day": "السبت", "dhikr": "يَا رَبَّ الْعَالَمِين", "count": "100 مرة", "reward": "توجب استجابة الدعاء وقضاء الحوائج"},
+      {"day": "الأحد", "dhikr": "يَا ذَا الْجَلَالِ وَالْإِكْرَام", "count": "100 مرة", "reward": "تزيد في الإيمان وتيسر الأمور"},
+      {"day": "الإثنين", "dhikr": "يَا قَاضِيَ الْحَاجَات", "count": "100 مرة", "reward": "توجب نيل المقامات والبركة في الرزق"},
+      {"day": "الثلاثاء", "dhikr": "يَا أَرْحَمَ الرَّاحِمِين", "count": "100 مرة", "reward": "تفتح أبواب الرحمة وتدفع البلاء"},
+      {"day": "الأربعاء", "dhikr": "يَا حَيُّ يَا قَيُّوم", "count": "100 مرة", "reward": "تزيد في العمر وصلاح المعاش والآخرة"},
+      {"day": "الخميس", "dhikr": "لَا إِلٰهَ إِلَّا اللهُ الْمَلِكُ الْحَقُّ الْمُبِين", "count": "100 مرة", "reward": "توجب الغنى وطرد الفقر وحفظ القبر"},
+      {"day": "الجمعة", "dhikr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَآلِ مُحَمَّدٍ وَعَجِّلْ فَرَجَهُم", "count": "100 مرة", "reward": "تمحو السيئات وترفع الدرجات العظمى"},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            minChildSize: 0.4,
+            maxChildSize: 0.85,
+            expand: false,
+            builder: (context, scrollController) {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Text(
+                      "الأذكار اليومية المستحبة لأيام الأسبوع",
+                      style: GoogleFonts.cairo(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8A1525),
+                      ),
+                    ),
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                    
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        itemCount: weekAzkar.length,
+                        itemBuilder: (context, index) {
+                          final item = weekAzkar[index];
+                          // معرفة اليوم الحالي لتسليط الضوء عليه
+                          final weekday = DateTime.now().weekday;
+                          bool isToday = false;
+                          if (item["day"] == "السبت" && weekday == DateTime.saturday) isToday = true;
+                          if (item["day"] == "الأحد" && weekday == DateTime.sunday) isToday = true;
+                          if (item["day"] == "الإثنين" && weekday == DateTime.monday) isToday = true;
+                          if (item["day"] == "الثلاثاء" && weekday == DateTime.tuesday) isToday = true;
+                          if (item["day"] == "الأربعاء" && weekday == DateTime.wednesday) isToday = true;
+                          if (item["day"] == "الخميس" && weekday == DateTime.thursday) isToday = true;
+                          if (item["day"] == "الجمعة" && weekday == DateTime.friday) isToday = true;
+
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => ReaderScreen(
+                                    title: "أذكار يوم ${item["day"]}",
+                                    text: "${item["dhikr"]}\n\n( ${item["count"]} )",
+                                    benefits: item["reward"]!,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isToday ? const Color(0xFFFAF5EC) : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: isToday 
+                                        ? const Color(0xFF8A1525).withValues(alpha: 0.06)
+                                        : Colors.black.withValues(alpha: 0.015),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  )
+                                ],
+                                border: Border.all(
+                                  color: isToday ? const Color(0xFF8A1525) : const Color(0xFFE2E8F0),
+                                  width: isToday ? 1.6 : 1.0,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  // 1. شارة اليوم الأنيقة (اليمين)
+                                  Container(
+                                    width: 68,
+                                    height: 34,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: isToday ? const Color(0xFF8A1525) : const Color(0xFFFAF5EC),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: isToday ? const Color(0xFF8A1525) : const Color(0xFFC5A880).withValues(alpha: 0.2),
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      item["day"]!,
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: isToday ? Colors.white : const Color(0xFFC5A880),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  
+                                  // 2. خط فاصل عمودي ناعم وفخم
+                                  Container(
+                                    width: 1.0,
+                                    height: 36,
+                                    color: isToday ? const Color(0xFF8A1525).withValues(alpha: 0.15) : const Color(0xFFE2E8F0),
+                                  ),
+                                  const SizedBox(width: 14),
+
+                                  // 3. الذكر وتفاصيله (المنتصف)
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item["dhikr"]!,
+                                          style: GoogleFonts.amiri(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            height: 1.3,
+                                            color: isToday ? const Color(0xFF8A1525) : const Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            // شارة العدد الصغير بلون ذهبي/ماروني ناعم
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: isToday ? const Color(0xFF8A1525).withValues(alpha: 0.08) : const Color(0xFFF1F5F9),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                item["count"]!,
+                                                style: GoogleFonts.cairo(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: isToday ? const Color(0xFF8A1525) : const Color(0xFF64748B),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            // وصف الأجر
+                                            Expanded(
+                                              child: Text(
+                                                item["reward"]!,
+                                                style: GoogleFonts.cairo(
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: const Color(0xFF64748B),
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // 4. أيقونة نجمة اليوم الفائقة الجودة (اليسار)
+                                  if (isToday) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.all(5),
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color(0xFF8A1525),
+                                      ),
+                                      child: const Icon(Icons.star, color: Color(0xFFC5A880), size: 12),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  /// منبثق سفلي فاخر لعرض قائمة الخدمات الإسلامية المتنوعة
+  void _showServicesBottomSheet(BuildContext context) {
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    
+    // قائمة الخدمات المتنوعة
+    final List<Map<String, dynamic>> services = [
+      {
+        "icon": Icons.explore_outlined,
+        "title": "بوصلة القبلة",
+        "desc": "تحديد اتجاه القبلة بدقة عالية",
+        "action": () {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const QiblaView()),
+          );
+        },
+      },
+      {
+        "icon": Icons.adjust_outlined,
+        "title": "المسبحة",
+        "desc": "تسبيح الزهراء (ع) والأذكار",
+        "action": () {
+          Navigator.of(context).pop();
+          provider.setActiveTab(3);
+        },
+      },
+      {
+        "icon": Icons.format_list_numbered_rtl,
+        "title": "عدد الركعات",
+        "desc": "ركعات الصلوات اليومية والنوافل",
+        "action": () {
+          Navigator.of(context).pop();
+          _showRakaatBottomSheet(context);
+        },
+      },
+      {
+        "icon": Icons.calendar_month_outlined,
+        "title": "التقويم الهجري",
+        "desc": "مناسبات وأعياد أهل البيت (ع)",
+        "action": () {
+          Navigator.of(context).pop();
+          final allEvents = ShiaData.events;
+          _showEventsBottomSheet(context, allEvents, showAll: true);
+        },
+      },
+      {
+        "icon": Icons.music_note_outlined,
+        "title": "النغمات",
+        "desc": "أصوات أذان وأدعية للهاتف",
+        "action": () {
+          Navigator.of(context).pop();
+          _showRingtonesBottomSheet(context);
+        },
+      },
+      {
+        "icon": Icons.star_outline_rounded,
+        "title": "أسماء الله الحسنى",
+        "desc": "99 اسماً من أسماء الله تعالى",
+        "action": () {
+          Navigator.of(context).pop();
+          _showAsmaaAllahBottomSheet(context);
+        },
+      },
+      {
+        "icon": Icons.share_outlined,
+        "title": "مشاركة التطبيق",
+        "desc": "شارك الخير مع أحبائك",
+        "action": () {
+          Navigator.of(context).pop();
+          // يمكن إضافة منطق المشاركة لاحقاً
+        },
+      },
+      {
+        "icon": Icons.info_outline_rounded,
+        "title": "عن التطبيق",
+        "desc": "معلومات الإصدار والمطور",
+        "action": () {
+          Navigator.of(context).pop();
+          _showAboutAppDialog(context);
+        },
+      },
+    ];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // مقبض السحب العلوي
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // عنوان القائمة
+                Text(
+                  "الخدمات",
+                  style: GoogleFonts.cairo(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF8A1525),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // شبكة الخدمات (4 أعمدة × 2 صفوف)
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 0.75,
+                  ),
+                  itemCount: services.length,
+                  itemBuilder: (context, index) {
+                    final item = services[index];
+                    return GestureDetector(
+                      onTap: item["action"] as VoidCallback,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF8A1525).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              item["icon"] as IconData,
+                              size: 26,
+                              color: const Color(0xFF8A1525),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            item["title"] as String,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.cairo(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF1E293B),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            item["desc"] as String,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.cairo(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[500],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// منبثق عدد ركعات الصلوات اليومية والنوافل حسب المذهب الجعفري
+  void _showRakaatBottomSheet(BuildContext context) {
+    final List<Map<String, String>> rakaatData = [
+      {"name": "صلاة الصبح", "fard": "٢", "nafila": "٢", "total": "٤"},
+      {"name": "صلاة الظهر", "fard": "٤", "nafila": "٨", "total": "١٢"},
+      {"name": "صلاة العصر", "fard": "٤", "nafila": "٨", "total": "١٢"},
+      {"name": "صلاة المغرب", "fard": "٣", "nafila": "٤", "total": "٧"},
+      {"name": "صلاة العشاء", "fard": "٤", "nafila": "٢", "total": "٦"},
+      {"name": "صلاة الليل", "fard": "-", "nafila": "١١", "total": "١١"},
+    ];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+                Text("عدد ركعات الصلوات اليومية", style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF8A1525))),
+                const SizedBox(height: 4),
+                Text("حسب المذهب الجعفري الاثنا عشري", style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey[600])),
+                const Divider(height: 20),
+                // عناوين الأعمدة
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      Expanded(flex: 3, child: Text("الصلاة", style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w900, color: const Color(0xFF8A1525)))),
+                      Expanded(flex: 2, child: Center(child: Text("الفريضة", style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey[700])))),
+                      Expanded(flex: 2, child: Center(child: Text("النافلة", style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey[700])))),
+                      Expanded(flex: 2, child: Center(child: Text("المجموع", style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey[700])))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...rakaatData.map((item) => Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(flex: 3, child: Text(item["name"]!, style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)))),
+                      Expanded(flex: 2, child: Center(child: Text(item["fard"]!, style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w900, color: const Color(0xFF8A1525))))),
+                      Expanded(flex: 2, child: Center(child: Text(item["nafila"]!, style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w900, color: const Color(0xFFC5A880))))),
+                      Expanded(flex: 2, child: Center(child: Text(item["total"]!, style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B))))),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8A1525).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: Color(0xFF8A1525)),
+                      const SizedBox(width: 6),
+                      Text("المجموع الكلي: ٥٢ ركعة يومياً (١٧ فريضة + ٣٥ نافلة)", style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF8A1525))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// منبثق النغمات الإسلامية
+  void _showRingtonesBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                Text("النغمات الإسلامية", style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF8A1525))),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.music_note_outlined, size: 48, color: Color(0xFFC5A880)),
+                      const SizedBox(height: 12),
+                      Text("قريباً إن شاء الله", style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B))),
+                      const SizedBox(height: 4),
+                      Text("سيتم إضافة نغمات أذان وأدعية وأصوات إسلامية قريباً", style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey[600]), textAlign: TextAlign.center),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// منبثق أسماء الله الحسنى
+  void _showAsmaaAllahBottomSheet(BuildContext context) {
+    final List<String> names = [
+      "الله", "الرحمن", "الرحيم", "الملك", "القدوس", "السلام", "المؤمن", "المهيمن", "العزيز", "الجبار",
+      "المتكبر", "الخالق", "البارئ", "المصور", "الغفار", "القهار", "الوهاب", "الرزاق", "الفتاح", "العليم",
+      "القابض", "الباسط", "الخافض", "الرافع", "المعز", "المذل", "السميع", "البصير", "الحكم", "العدل",
+      "اللطيف", "الخبير", "الحليم", "العظيم", "الغفور", "الشكور", "العلي", "الكبير", "الحفيظ", "المقيت",
+      "الحسيب", "الجليل", "الكريم", "الرقيب", "المجيب", "الواسع", "الحكيم", "الودود", "المجيد", "الباعث",
+      "الشهيد", "الحق", "الوكيل", "القوي", "المتين", "الولي", "الحميد", "المحصي", "المبدئ", "المعيد",
+      "المحيي", "المميت", "الحي", "القيوم", "الواجد", "الماجد", "الواحد", "الأحد", "الصمد", "القادر",
+      "المقتدر", "المقدم", "المؤخر", "الأول", "الآخر", "الظاهر", "الباطن", "الوالي", "المتعالي", "البر",
+      "التواب", "المنتقم", "العفو", "الرؤوف", "مالك الملك", "ذو الجلال والإكرام", "المقسط", "الجامع", "الغني", "المغني",
+      "المانع", "الضار", "النافع", "النور", "الهادي", "البديع", "الباقي", "الوارث", "الرشيد",
+    ];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.4,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (context, scrollController) {
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                    Text("أسماء الله الحسنى", style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF8A1525))),
+                    const Divider(height: 20),
+                    Expanded(
+                      child: GridView.builder(
+                        controller: scrollController,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 2.5,
+                        ),
+                        itemCount: names.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFC5A880).withValues(alpha: 0.3)),
+                            ),
+                            child: Center(
+                              child: Text(
+                                names[index],
+                                style: GoogleFonts.amiri(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF8A1525),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  /// حوار معلومات التطبيق
+  void _showAboutAppDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text("حقيبة الحسين (ع)", style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF8A1525))),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("الإصدار: 1.0.0", style: GoogleFonts.cairo(fontSize: 13, color: Colors.grey[700])),
+                const SizedBox(height: 8),
+                Text("تطبيق إسلامي شيعي شامل يحتوي على القرآن الكريم والأدعية والزيارات والأذكار ومواقيت الصلاة وبوصلة القبلة والمسبحة الإلكترونية والتقويم الهجري.", style: GoogleFonts.cairo(fontSize: 12, height: 1.6, color: Colors.grey[600])),
+                const SizedBox(height: 12),
+                Text("اللهم صل على محمد وآل محمد", style: GoogleFonts.amiri(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFFC5A880))),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("حسناً", style: GoogleFonts.cairo(fontWeight: FontWeight.bold, color: const Color(0xFF8A1525))),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// منبثق سفلي لعرض مناسبات اليوم أو كل المناسبات الهجرية
+  void _showEventsBottomSheet(BuildContext context, List<HijriEvent> events, {bool showAll = false}) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            minChildSize: 0.4,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (context, scrollController) {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Text(
+                      showAll ? "تقويم أحداث ومناسبات أهل البيت (ع)" : "تفاصيل أعمال ومناسبات اليوم",
+                      style: GoogleFonts.cairo(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8A1525),
+                      ),
+                    ),
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
+
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        itemCount: events.length,
+                        itemBuilder: (context, index) {
+                          final event = events[index];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: event.isMartyrdom
+                                  ? const Color(0xFFFEF2F2)
+                                  : const Color(0xFFFFFBEB),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: event.isMartyrdom 
+                                    ? Colors.red.withValues(alpha: 0.25) 
+                                    : const Color(0xFFC5A880).withValues(alpha: 0.25),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          event.isMartyrdom ? Icons.brightness_1 : Icons.star,
+                                          color: event.isMartyrdom ? Colors.red : const Color(0xFFC5A880),
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          event.title,
+                                          style: GoogleFonts.cairo(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: event.isMartyrdom ? Colors.red[850] : const Color(0xFFC5A880),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (showAll)
+                                      Text(
+                                        "${event.day} / ${event.month}",
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF475569),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  event.description,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 12,
+                                    color: const Color(0xFF0F172A).withValues(alpha: 0.8),
+                                  ),
+                                ),
+                                if (event.recommendedActs.isNotEmpty) ...[
+                                  const Divider(height: 12, color: Color(0xFFF1F5F9)),
+                                  Text(
+                                    "الأعمال المستحبة المأثورة:",
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    event.recommendedActs,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 11,
+                                      color: const Color(0xFF8A1525),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHijriCalendarBottomSheet(BuildContext context, AppProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _HijriCalendarDialog(provider: provider);
+      },
+    );
+  }
+}
+
+class GesturefulCitySelector extends StatelessWidget {
+  final AppProvider provider;
+
+  const GesturefulCitySelector({super.key, required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      icon: const Icon(Icons.edit_location, size: 14, color: Color(0xFF8A1525)),
+      label: Text(
+        "تغيير",
+        style: GoogleFonts.cairo(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF8A1525),
+        ),
+      ),
+      onPressed: () {
+        _showCityPickerDialog(context);
+      },
+    );
+  }
+
+  void _showCityPickerDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return _ShiaLocationBottomSheet(provider: provider);
+      },
+    );
+  }
+}
+
+// نافذة تفاعلية من مستويين تظهر من الأسفل لاختيار الدولة أولاً ثم المدينة/المحافظة المقابلة لها
+class _ShiaLocationBottomSheet extends StatefulWidget {
+  final AppProvider provider;
+
+  const _ShiaLocationBottomSheet({required this.provider});
+
+  @override
+  State<_ShiaLocationBottomSheet> createState() => _ShiaLocationBottomSheetState();
+}
+
+class _ShiaLocationBottomSheetState extends State<_ShiaLocationBottomSheet> {
+  ShiaCountry? _selectedCountry;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleText = _selectedCountry == null
+        ? "اختر الدولة للحساب الشرعي"
+        : "اختر المدينة في ${_selectedCountry!.name}";
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.65,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          children: [
+            // مقبض سحب علوي أنيق للتصميم العصري
+            const SizedBox(height: 12),
+            Container(
+              width: 50,
+              height: 5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // شريط رأس المنبثق
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  if (_selectedCountry != null)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_forward, color: Color(0xFF0F172A), size: 24),
+                      onPressed: () {
+                        setState(() {
+                          _selectedCountry = null;
+                        });
+                      },
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.only(left: 12),
+                    ),
+                  Expanded(
+                    child: Text(
+                      titleText,
+                      style: GoogleFonts.cairo(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17, // تكبير خط العنوان للوضوح
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            
+            // محتوى القائمة
+            Expanded(
+              child: _selectedCountry == null ? _buildCountryList() : _buildCityList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCountryList() {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const BouncingScrollPhysics(),
+      itemCount: LocationService.countries.length,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+      itemBuilder: (context, index) {
+        final country = LocationService.countries[index];
+        
+        // التحقق مما إذا كانت المدينة الحالية تنتمي لهذه الدولة لنضيف شارة تميز الحالية
+        final bool isCurrentCountry = country.cities.any(
+          (c) => c.name == widget.provider.selectedCity.name && !widget.provider.isGpsActive
+        );
+
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // زيادة المساحة للوضوح
+          title: Text(
+            country.name,
+            style: GoogleFonts.cairo(
+              fontSize: 16.5, // خط كبير وواضح جداً
+              fontWeight: isCurrentCountry ? FontWeight.bold : FontWeight.w700, // سماكة واضحة
+              color: isCurrentCountry ? const Color(0xFF8A1525) : const Color(0xFF0F172A), // تباين قوي
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isCurrentCountry)
+                Container(
+                  margin: const EdgeInsets.only(left: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    "الحالية",
+                    style: GoogleFonts.cairo(
+                      fontSize: 11, // خط الشارة واضح ومقروء
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF8A1525),
+                    ),
+                  ),
+                ),
+              const Icon(Icons.chevron_left, color: Color(0xFF475569), size: 22),
+            ],
+          ),
+          onTap: () {
+            setState(() {
+              _selectedCountry = country;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCityList() {
+    final cities = _selectedCountry!.cities;
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const BouncingScrollPhysics(),
+      itemCount: cities.length,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+      itemBuilder: (context, index) {
+        final city = cities[index];
+        final isSelected = widget.provider.selectedCity.name == city.name && !widget.provider.isGpsActive;
+        
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // زيادة الهوامش للوضوح
+          title: Text(
+            city.name.split('،').first, // اسم المدينة فقط للاختصار الأنيق
+            style: GoogleFonts.cairo(
+              fontSize: 16.5, // خط كبير وواضح جداً
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w700, // سماكة واضحة
+              color: isSelected ? const Color(0xFF8A1525) : const Color(0xFF0F172A), // تباين قوي
+            ),
+          ),
+          subtitle: Text(
+            "شرقاً: ${city.longitude.toStringAsFixed(2)}° | شمالاً: ${city.latitude.toStringAsFixed(2)}°",
+            style: GoogleFonts.cairo(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+          trailing: isSelected 
+              ? const Icon(Icons.check_circle, color: Color(0xFF8A1525), size: 24) 
+              : null,
+          onTap: () {
+            // البحث عن الفهرس العام للمدينة لتخزينها بدقة ومطابقة البنية السابقة
+            final globalIndex = LocationService.shiaCities.indexWhere(
+              (c) => c.name == city.name
+            );
+            widget.provider.selectCity(city, globalIndex);
+            Navigator.of(context).pop();
+          },
+        );
+      },
+    );
+  }
+}
+
+// ==========================================
+// التقويم الهجري الشهري التفاعلي الجديد
+// ==========================================
+class _HijriCalendarDialog extends StatefulWidget {
+  final AppProvider provider;
+
+  const _HijriCalendarDialog({required this.provider});
+
+  @override
+  State<_HijriCalendarDialog> createState() => _HijriCalendarDialogState();
+}
+
+class _HijriCalendarDialogState extends State<_HijriCalendarDialog> {
+  late int currentYear;
+  late int currentMonth;
+  late int selectedDay;
+  late HijriCalendar todayHijri;
+
+  @override
+  void initState() {
+    super.initState();
+    todayHijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: widget.provider.hijriOffset)));
+    currentYear = todayHijri.hYear;
+    currentMonth = todayHijri.hMonth;
+    selectedDay = todayHijri.hDay;
+  }
+
+  void _changeMonth(int direction) {
+    setState(() {
+      currentMonth += direction;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      } else if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear--;
+      }
+      selectedDay = 1;
+    });
+  }
+
+  int _getWeekdayOffset(int weekday) {
+    switch (weekday) {
+      case DateTime.saturday: return 0;
+      case DateTime.sunday: return 1;
+      case DateTime.monday: return 2;
+      case DateTime.tuesday: return 3;
+      case DateTime.wednesday: return 4;
+      case DateTime.thursday: return 5;
+      case DateTime.friday: return 6;
+      default: return 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const hijriMonths = [
+      'محرّم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الآخرة',
+      'رجب', 'شعبان', 'رمضان', 'شوّال', 'ذو القعدة', 'ذو الحجّة'
+    ];
+    
+    final tempCal = HijriCalendar();
+    final totalDays = tempCal.getDaysInMonth(currentYear, currentMonth);
+    DateTime firstDayG;
+    try {
+      firstDayG = tempCal.hijriToGregorian(currentYear, currentMonth, 1);
+    } catch (e) {
+      firstDayG = DateTime.now();
+    }
+    final startOffset = _getWeekdayOffset(firstDayG.weekday);
+    final totalGridCells = startOffset + totalDays;
+
+    final monthEvents = ShiaData.events.where((e) => e.month == currentMonth).toList();
+    final selectedDayEvents = ShiaData.events.where((e) => e.day == selectedDay && e.month == currentMonth).toList();
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.6,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios, size: 20, color: Color(0xFF8A1525)),
+                        onPressed: () => _changeMonth(-1),
+                      ),
+                      
+                      Column(
+                        children: [
+                          Text(
+                            hijriMonths[currentMonth - 1],
+                            style: GoogleFonts.cairo(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF8A1525),
+                            ),
+                          ),
+                          Text(
+                            "$currentYear هـ",
+                            style: GoogleFonts.cairo(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFC5A880),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      IconButton(
+                        icon: const Icon(Icons.arrow_forward_ios, size: 20, color: Color(0xFF8A1525)),
+                        onPressed: () => _changeMonth(1),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const Divider(height: 12, color: Color(0xFFF1F5F9)),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: const [
+                      _WeekdayHeaderCell(title: "السبت"),
+                      _WeekdayHeaderCell(title: "الأحد"),
+                      _WeekdayHeaderCell(title: "الإثنين"),
+                      _WeekdayHeaderCell(title: "الثلاثاء"),
+                      _WeekdayHeaderCell(title: "الأربعاء"),
+                      _WeekdayHeaderCell(title: "الخميس"),
+                      _WeekdayHeaderCell(title: "الجمعة"),
+                    ],
+                  ),
+                ),
+                
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 7,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 1.0,
+                    ),
+                    itemCount: totalGridCells,
+                    itemBuilder: (context, index) {
+                      if (index < startOffset) {
+                        return const SizedBox();
+                      }
+                      
+                      final dayNum = index - startOffset + 1;
+                      
+                      final isToday = dayNum == todayHijri.hDay &&
+                                      currentMonth == todayHijri.hMonth &&
+                                      currentYear == todayHijri.hYear;
+                                      
+                      final isSelected = dayNum == selectedDay;
+
+                      final dayEvents = ShiaData.events.where((e) => e.day == dayNum && e.month == currentMonth).toList();
+                      final hasEvents = dayEvents.isNotEmpty;
+                      final hasMartyrdom = dayEvents.any((e) => e.isMartyrdom);
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedDay = dayNum;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isToday
+                                ? const Color(0xFF8A1525)
+                                : isSelected
+                                    ? const Color(0xFF8A1525).withValues(alpha: 0.15)
+                                    : Colors.transparent,
+                            border: Border.all(
+                              color: isSelected
+                                  ? const Color(0xFF8A1525)
+                                  : isToday
+                                      ? const Color(0xFF8A1525)
+                                      : Colors.grey[200]!,
+                              width: isSelected || isToday ? 2 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                dayNum.toString(),
+                                style: GoogleFonts.cairo(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: isToday
+                                      ? Colors.white
+                                      : const Color(0xFF1E293B),
+                                ),
+                              ),
+                              if (hasEvents)
+                                Container(
+                                  width: 5,
+                                  height: 5,
+                                  margin: const EdgeInsets.only(top: 2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: hasMartyrdom
+                                        ? Colors.red
+                                        : const Color(0xFFC5A880),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                const Divider(height: 12, color: Color(0xFFF1F5F9)),
+
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.bookmark_outline, size: 16, color: Color(0xFF8A1525)),
+                          const SizedBox(width: 6),
+                          Text(
+                            "أعمال ومناسبات اليوم المختار ($selectedDay ${hijriMonths[currentMonth - 1]}):",
+                            style: GoogleFonts.cairo(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF8A1525),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      if (selectedDayEvents.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Text(
+                            "لا توجد مناسبات أو أعمال مأثورة مسجلة لهذا اليوم بعينه. يمكنك تصفح مناسبات الشهر بالأسفل.",
+                            style: GoogleFonts.cairo(
+                              fontSize: 11,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        )
+                      else
+                        ...selectedDayEvents.map((event) => _buildCalendarEventCard(event)),
+                      
+                      const SizedBox(height: 16),
+                      const Divider(height: 8, color: Color(0xFFF1F5F9)),
+                      const SizedBox(height: 8),
+                      
+                      Row(
+                        children: [
+                          const Icon(Icons.event_note, size: 16, color: Color(0xFFC5A880)),
+                          const SizedBox(width: 6),
+                          Text(
+                            "مناسبات شهر ${hijriMonths[currentMonth - 1]} بالكامل:",
+                            style: GoogleFonts.cairo(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      if (monthEvents.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            "لا توجد مناسبات مسجلة لهذا الشهر في الأرشيف.",
+                            style: GoogleFonts.cairo(
+                              fontSize: 11,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        )
+                      else
+                        ...monthEvents.map((event) => _buildCalendarEventCard(event, highlightSelected: event.day == selectedDay)),
+                      
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCalendarEventCard(HijriEvent event, {bool highlightSelected = false}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: highlightSelected
+            ? (event.isMartyrdom ? const Color(0xFFFFF1F2) : const Color(0xFFFEF3C7))
+            : (event.isMartyrdom ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: highlightSelected
+              ? (event.isMartyrdom ? Colors.red[400]! : const Color(0xFFC5A880))
+              : (event.isMartyrdom 
+                  ? Colors.red.withValues(alpha: 0.15) 
+                  : const Color(0xFFC5A880).withValues(alpha: 0.15)),
+          width: highlightSelected ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    event.isMartyrdom ? Icons.brightness_1 : Icons.star,
+                    color: event.isMartyrdom ? Colors.red : const Color(0xFFC5A880),
+                    size: 12,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    event.title,
+                    style: GoogleFonts.cairo(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                      color: event.isMartyrdom ? Colors.red[850] : const Color(0xFFC5A880),
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                "${event.day} / ${event.month}",
+                style: GoogleFonts.cairo(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF475569),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            event.description,
+            style: GoogleFonts.cairo(
+              fontSize: 11.5,
+              color: const Color(0xFF0F172A).withValues(alpha: 0.75),
+              height: 1.5,
+            ),
+          ),
+          if (event.recommendedActs.isNotEmpty) ...[
+            const Divider(height: 10, color: Color(0xFFF1F5F9)),
+            Text(
+              "الأعمال المستحبة المأثورة:",
+              style: GoogleFonts.cairo(
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              event.recommendedActs,
+              style: GoogleFonts.cairo(
+                fontSize: 11,
+                color: const Color(0xFF8A1525),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _WeekdayHeaderCell extends StatelessWidget {
+  final String title;
+
+  const _WeekdayHeaderCell({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Center(
+        child: Text(
+          title,
+          style: GoogleFonts.cairo(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+}
