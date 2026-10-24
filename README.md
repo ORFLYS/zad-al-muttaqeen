@@ -1,7 +1,7 @@
 # تطبيق زاد المتقين | Zad Al-Muttaqeen
 
 <p align="center">
-  <img src="assets/images/logo.png" alt="Zad Al-Muttaqeen Logo" width="120" />
+  <img src="assets/logo.png" alt="Zad Al-Muttaqeen Logo" width="120" />
 </p>
 
 <p align="center">
@@ -9,10 +9,26 @@
 </p>
 
 <p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.huda.bag.hqepa">
+    <img src="https://img.shields.io/badge/Google_Play-متوفر_الآن-34A853?logo=google-play&logoColor=white" alt="Google Play" />
+  </a>
   <img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter" alt="Flutter" />
   <img src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android" alt="Android" />
-  <img src="https://img.shields.io/badge/License-Proprietary-blue" alt="License" />
   <img src="https://img.shields.io/badge/Version-1.0.8-gold" alt="Version" />
+</p>
+
+---
+
+## 📱 لقطات من التطبيق (App Screenshots)
+
+<p align="center">
+  <img src="screenshots/screenshot_1.png" width="130" alt="الرئيسية" />
+  <img src="screenshots/screenshot_2.png" width="130" alt="مواقيت الصلاة" />
+  <img src="screenshots/screenshot_3.png" width="130" alt="القرآن الكريم" />
+  <img src="screenshots/screenshot_4.png" width="130" alt="التقويم الهجري" />
+  <img src="screenshots/screenshot_5.png" width="130" alt="الأدعية والزيارات" />
+  <img src="screenshots/screenshot_6.png" width="130" alt="القبلة" />
+  <img src="screenshots/screenshot_7.png" width="130" alt="الأذكار والتسبيح" />
 </p>
 
 ---
@@ -58,7 +74,7 @@
 
 1. استنساخ المستودع:
 ```bash
-git clone https://github.com/USERNAME/zad-al-muttaqeen.git
+git clone https://github.com/ORFLYS/zad-al-muttaqeen.git
 cd zad-al-muttaqeen
 ```
 
